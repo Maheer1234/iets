@@ -88,3 +88,22 @@ for step in range(dagen):
         posities_m1.append((m1x, m1y))
         posities_m2.append((m2x, m2y))
         posities_M.append((Mx, My))
+    import matplotlib.pyplot as plt
+
+    # Posities splitsen in x- en y-lijsten
+    m1x_list, m1y_list = zip(*posities_m1)
+    m2x_list, m2y_list = zip(*posities_m2)
+    Mx_list, My_list = zip(*posities_M)
+
+    plt.figure(figsize=(8, 8))
+    plt.plot(m1x_list, m1y_list, label="Aarde", color="blue")
+    plt.plot(m2x_list, m2y_list, label="Mars", color="red")
+    plt.plot(Mx_list, My_list, label="Zon", color="orange")
+
+    plt.xlabel("x (m)")
+    plt.ylabel("y (m)")
+    plt.title("Banen van Aarde en Mars rond de Zon")
+    plt.axis("equal")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
