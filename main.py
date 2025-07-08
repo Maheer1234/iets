@@ -1,109 +1,148 @@
 import math
+import random
+import matplotlib.pyplot as plt
+import csv
 
-# Constantes
-G = 6.67430e-11       # Gravitatieconstante (m³/kg/s²)
-dt = 86400            # Tijdsinterval (1 dag in seconden)
-dagen = 10000         # Aantal iteraties (bijv. 10.000 dagen)
+# Gravitatieconstante
+G = 6.67430e-11
+dt = 3600  # 1 uur
+stappen = 2400000  # 100000 dagen simulatie
 
-# Massa's
-M = 1.989e30          # Zon
-m1 = 5.972e24         # Aarde
-m2 = 6.417e23         # Mars
+# Massa's (kg)
+M = 1.898e27      # Jupiter
+m_io = 8.93e22
+m_europa = 4.8e22
 
-# Beginposities (x, y)
-Mx, My = 0, 0
-m1x, m1y = 1.496e11, 0
-m2x, m2y = 0, 2.279e11
+# Halve lange assen (gemiddelde afstand tot Jupiter, meter)
+a_io = 4.22e8
+a_eu = 6.71e8
 
-# Beginsnelheden (x, y)
-vMx, vMy = 0, 0
-vm1x, vm1y = 0, 29780
-vm2x, vm2y = 24070, 0
+# Excentriciteiten
+e_io = 0.0041
+e_eu = 0.009
 
-# (Optioneel) Posities bijhouden om te plotten
-posities_m1 = []
-posities_m2 = []
-posities_M  = []
+# Start bij perihelium (dichtst bij Jupiter)
+r_io = a_io * (1 - e_io)
+r_eu = a_eu * (1 - e_eu)
 
-for step in range(dagen):
-    # Afstanden
-    dxMm1 = m1x - Mx
-    dyMm1 = m1y - My
-    dxMm2 = m2x - Mx
-    dyMm2 = m2y - My
-    dxm1m2 = m2x - m1x
-    dym1m2 = m2y - m1y
+# Vis-viva-vergelijking (snelheid bij perihelium)
+v_io = math.sqrt(G * M * (2 / r_io - 1 / a_io))
+v_eu = math.sqrt(G * M * (2 / r_eu - 1 / a_eu))
 
-    rMm1 = math.hypot(dxMm1, dyMm1)
-    rMm2 = math.hypot(dxMm2, dyMm2)
-    rm1m2 = math.hypot(dxm1m2, dym1m2)
+# Genereer beginpositie en -snelheid (richting loodrecht op straalvector)
+def random_pos_vel(r, v):
+    theta = random.uniform(0, 2 * math.pi)
+    x = r * math.cos(theta)
+    y = r * math.sin(theta)
+    vx = -v * math.sin(theta)
+    vy = v * math.cos(theta)
+    return x, y, vx, vy
 
-    # Krachten (schaalwaarden)
-    FzMm1 = G * M * m1 / rMm1**2
-    FzMm2 = G * M * m2 / rMm2**2
-    Fzm1m2 = G * m1 * m2 / rm1m2**2
+# Beginwaarden
+Mx, My, vMx, vMy = 0, 0, 0, 0
+iox, ioy, viox, vioy = random_pos_vel(r_io, v_io)
+eux, euy, veux, veuy = random_pos_vel(r_eu, v_eu)
 
-    # Richtingscomponenten krachten
-    FzMm1x = FzMm1 * dxMm1 / rMm1
-    FzMm1y = FzMm1 * dyMm1 / rMm1
+# Opslaan van posities
+pos_io = []
+pos_eu = []
+pos_jupiter = []
+theta_io = []
+theta_eu = []
 
-    FzMm2x = FzMm2 * dxMm2 / rMm2
-    FzMm2y = FzMm2 * dyMm2 / rMm2
+def hoek(x, y):
+    return math.atan2(y - My, x - Mx)
 
-    Fzm1m2x = Fzm1m2 * dxm1m2 / rm1m2
-    Fzm1m2y = Fzm1m2 * dym1m2 / rm1m2
+# Simulatie
+for step in range(stappen):
+    dx_io, dy_io = iox - Mx, ioy - My
+    dx_eu, dy_eu = eux - Mx, euy - My
 
-    # Resultante krachten
-    FMx = FzMm1x + FzMm2x
-    FMy = FzMm1y + FzMm2y
+    r_io_curr = math.hypot(dx_io, dy_io)
+    r_eu_curr = math.hypot(dx_eu, dy_eu)
 
-    Fm1x = -FzMm1x + Fzm1m2x
-    Fm1y = -FzMm1y + Fzm1m2y
+    F_io = G * M * m_io / r_io_curr**2
+    F_eu = G * M * m_europa / r_eu_curr**2
 
-    Fm2x = -FzMm2x - Fzm1m2x
-    Fm2y = -FzMm2y - Fzm1m2y
+    Fx_io = -F_io * dx_io / r_io_curr
+    Fy_io = -F_io * dy_io / r_io_curr
+    Fx_eu = -F_eu * dx_eu / r_eu_curr
+    Fy_eu = -F_eu * dy_eu / r_eu_curr
 
-    # Versnellingen (a = F/m) * dt
-    vMx += (FMx / M) * dt
-    vMy += (FMy / M) * dt
+    ax_io = Fx_io / m_io
+    ay_io = Fy_io / m_io
+    ax_eu = Fx_eu / m_europa
+    ay_eu = Fy_eu / m_europa
 
-    vm1x += (Fm1x / m1) * dt
-    vm1y += (Fm1y / m1) * dt
+    viox += ax_io * dt
+    vioy += ay_io * dt
+    veux += ax_eu * dt
+    veuy += ay_eu * dt
 
-    vm2x += (Fm2x / m2) * dt
-    vm2y += (Fm2y / m2) * dt
+    iox += viox * dt
+    ioy += vioy * dt
+    eux += veux * dt
+    euy += veuy * dt
 
-    # Positie updates
-    Mx += vMx * dt
-    My += vMy * dt
+    if step % 240 == 0:  # elke 10 dagen
+        pos_io.append((iox, ioy))
+        pos_eu.append((eux, euy))
+        pos_jupiter.append((Mx, My))
+        theta_io.append(hoek(iox, ioy))
+        theta_eu.append(hoek(eux, euy))
 
-    m1x += vm1x * dt
-    m1y += vm1y * dt
+# Omloopdetectie
+def tel_omlopen(theta_lijst):
+    count = 0
+    for i in range(1, len(theta_lijst)):
+        if theta_lijst[i-1] < 0 and theta_lijst[i] >= 0:
+            count += 1
+    return count
 
-    m2x += vm2x * dt
-    m2y += vm2y * dt
+n_io = tel_omlopen(theta_io)
+n_eu = tel_omlopen(theta_eu)
 
-    # Posities opslaan (elke 10 stappen)
-    if step % 10 == 0:
-        posities_m1.append((m1x, m1y))
-        posities_m2.append((m2x, m2y))
-        posities_M.append((Mx, My))
-    import matplotlib.pyplot as plt
+# Verhouding vereenvoudigen
+def vereenvoudig(a, b):
+    from math import gcd
+    g = gcd(a, b)
+    return a // g, b // g
 
-    # Posities splitsen in x- en y-lijsten
-    m1x_list, m1y_list = zip(*posities_m1)
-    m2x_list, m2y_list = zip(*posities_m2)
-    Mx_list, My_list = zip(*posities_M)
+v1, v2 = vereenvoudig(n_io, n_eu)
 
-    plt.figure(figsize=(8, 8))
-    plt.plot(m1x_list, m1y_list, label="Aarde", color="blue")
-    plt.plot(m2x_list, m2y_list, label="Mars", color="red")
-    plt.plot(Mx_list, My_list, label="Zon", color="orange")
+# 📊 Resultaten printen
+print("📈 Omloopverhouding over de simulatie:")
+print(f"Io     : {n_io} omlopen")
+print(f"Europa : {n_eu} omlopen")
+print(f"➤ Verhouding Io : Europa ≈ {v1}:{v2}")
 
-    plt.xlabel("x (m)")
-    plt.ylabel("y (m)")
-    plt.title("Banen van Aarde en Mars rond de Zon")
-    plt.axis("equal")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+# 💾 Export naar CSV
+with open("posities.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["dag", "iox", "ioy", "eux", "euy", "Mx", "My"])
+    for i in range(len(pos_io)):
+        iox_, ioy_ = pos_io[i]
+        eux_, euy_ = pos_eu[i]
+        Mx_, My_ = pos_jupiter[i]
+        writer.writerow([i * 10, iox_, ioy_, eux_, euy_, Mx_, My_])
+
+print("✅ Posities opgeslagen in 'posities.csv'.")
+
+# 📈 Plot
+iox_list, ioy_list = zip(*pos_io)
+eux_list, euy_list = zip(*pos_eu)
+Mx_list, My_list = zip(*pos_jupiter)
+
+plt.figure(figsize=(10, 10))
+plt.plot(iox_list, ioy_list, label="Io", color="orange")
+plt.plot(eux_list, euy_list, label="Europa", color="blue")
+plt.plot(Mx_list, My_list, 'o', label="Jupiter", color="gray", markersize=4)
+
+plt.xlabel("x (meter)")
+plt.ylabel("y (meter)")
+plt.title("Banen van Io en Europa met elliptische banen (resonantieonderzoek)")
+plt.axis("equal")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
