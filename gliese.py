@@ -114,7 +114,7 @@ for step in range(stappen):
     m2y += vm2y * dt
 
     # Opslaan van eerste 1000 en laatste 1000 uur
-    if step > 990000 and step <= 1000000:
+    if step < 10000 :
         uren.append(step)
         posities_m1.append((m1x, m1y))
         posities_m2.append((m2x, m2y))
