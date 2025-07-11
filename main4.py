@@ -6,7 +6,7 @@ import csv
 # Constantes
 G = 6.67430e-11     # Gravitatieconstante in m^3/kg/s^2
 dt = 3600           # Tijdsinterval: 1 uur (in seconden)
-stappen = 5_000_000 # Simuleer 5 miljoen uur (ongeveer 570 jaar)
+stappen = 1_000_000 # Simuleer 5 miljoen uur (ongeveer 570 jaar)
 
 
 # Massa's (in kg)
